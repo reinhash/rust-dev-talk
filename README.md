@@ -325,7 +325,7 @@ We need to derive Debug to print the struct. Let's do that!
 Great! Now check out the code we used to get there. As you can see, we explicitly told the compiler to use Post on the left side of the equals sign. This is needed to apply the correct transformation. This is a very powerful feature of Rust, as it allows us to be very explicit about what we want to do.
 
 
-### Option and Result
+## Option and Result
 
 Two of the most powerful types in Rust are Option and Result. Let's see how they work!
 
@@ -408,7 +408,7 @@ match get_post() {
 
 Since we are responsible developers, let's write some tests!
 
-### Running tests
+## Running tests
 13. Let's create a test 
 ```rust
 #[cfg(test)]
@@ -449,7 +449,7 @@ fn get_post() -> Result<Post, String> {
 
 Run the test again, as you can see it passes now.
 
-### Creating the documentation
+## Creating the documentation
 
 15. In order to create the documentation, we need to add some comments to our code. Let's do that!
 
@@ -472,7 +472,7 @@ cargo doc --open
 
 As you can see Rust is awesome, we can create documentation for our whole codebase with a single command.
 
-### Webserver
+## Webserver
 
 But wait, there is more. Let's create a webserver!
 We can use the famous axum crate for this.
@@ -535,7 +535,7 @@ Then we return it as json:
     let app = Router::new().route("/", get(post_handler));
 ```
 
-### Throw it into a Docker container
+## Throw it into a Docker container
 
 20. First we need to create a Dockerfile
 
