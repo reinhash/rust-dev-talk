@@ -212,22 +212,11 @@ cargo add serde_json
 ```
 3. Let's use that package to transform some json. First we need to get some json data:
 ```shell
-curl https://jsonplaceholder.typicode.com/posts/1 > post.json
+cp ../train.json .
 ```
-4. Now we can use the serde package to parse the json. Let's uncomment the train for now.
-
+4. Now we can use the serde package to parse the json. We can now open the file in our main function:
 ```rust
-// let train = Train {
-//     name: String::from("Thomas"),
-//     speed: 99.0,
-//     type_: TrainType::Regional(String::from("S-7")),
-// };
-// print!("{}", train);
-```
-
-5. We can now open the file that we saved as post.json in our main function:
-```rust
-let mut file = File::open("post.json").unwrap();
+let mut file = File::open("train.json").unwrap();
 let mut contents = String::new();
 file.read_to_string(&mut contents).unwrap();
 
@@ -258,11 +247,11 @@ Let's give this another try!
 
 **Does it compile?**
 
-6. Since we can see that we have successfully read the file, let's try to parse the json with serde_json
+5. Since we can see that we have successfully read the file, let's try to parse the json with serde_json
 ```rust
 use serde_json::Value;
 
-let post: Value = serde_json::from_str(&contents).unwrap();
+let train: Value = serde_json::from_str(&contents).unwrap();
 ```
 
 Do not forget to remove the following line or the borrow checker will complain:
@@ -270,17 +259,28 @@ Do not forget to remove the following line or the borrow checker will complain:
 println!("{}", contents);
 ```
 
-7. Now we can access the fields of the json object
+Let's also uncomment the train initialization and printing it:
 ```rust
-let title = post["title"].as_str().unwrap();
-let body = post["body"].as_str().unwrap();
-println!("Title: {}", title);
-println!("Body: {}", body);
+    // let train = Train {
+    //     name: String::from("Thomas"),
+    //     speed: 99.0,
+    //     type_: TrainType::Regional(String::from("S-7")),
+    // };
+
+    // print!("{}", train);
+```
+
+6. Now we can access the fields of the json object
+```rust
+let name = train["name"].as_str().unwrap();
+let speed = train["speed"].as_f64().unwrap();
+let type_ = train["type_"].as_str().unwrap();
+println!("Name: {}, Speed: {}, Type: {}", name, speed, type_);
 ```
 
 Nice! We can access the values like on a hashmap. But what if we want to access the values in a more type safe way?
 
-8. Let's create a struct that represents the json object. First we need to add the core serde package:
+7. Let's create a struct that represents the json object. First we need to add the core serde package:
 ```shell
 cargo add serde
 ```
@@ -291,38 +291,67 @@ To use the feature we need from serde, we need to add a feature flag to our Carg
 serde = { version = "1.0.215", features = ["derive"] }
 ```
 
-Now we can use its derive macro to create a struct that represents the json object:
+Now we can use its derive macro to decorate the Train struct:
 
 ```rust
 use serde::Deserialize;
 
 #[derive(Deserialize)]
-struct Post {
-    userId: u32,
-    id: u32,
-    title: String,
-    body: String,
+struct Train {
+    name: String,
+    speed: f64,
+    type_: TrainType,
 }
 ```
 
-9. Now we can parse the json object into our struct
-```rust
-let post: Post = serde_json::from_str(&contents).unwrap();
+As you can see we still cannot compile the code. Why?
+Because our TrainType enum is not deserializable. Let's fix that!
 
-println!("Post: {:?}", post);
+8. Add the derive macro to the TrainType enum
+```rust
+#[derive(Deserialize)]
+enum TrainType {
+    ICE,
+    IC,
+    Regional(String),
+    S,
+}
+```
+
+
+8. Now we can parse the json object into our Train struct
+```rust
+let train: Train = serde_json::from_str(&contents).unwrap();
+
+println!("Train: {:?}", train);
 ```
 
 **Does it compile?**
 
 As you can see, this does not compile. Why?
 
-We need to derive Debug to print the struct. Let's do that!
+We need to derive Debug to print the Train and TrainType struct. Let's do that!
 
 ```rust
 #[derive(Deserialize, Debug)]
+enum TrainType {
+    ICE,
+    IC,
+    Regional(String),
+    S,
+}
 ```
 
-Great! Now check out the code we used to get there. As you can see, we explicitly told the compiler to use Post on the left side of the equals sign. This is needed to apply the correct transformation. This is a very powerful feature of Rust, as it allows us to be very explicit about what we want to do.
+```rust
+#[derive(Deserialize, Debug)]
+struct Train {
+    name: String,
+    speed: f64,
+    type_: TrainType,
+}
+```
+
+Great! Now check out the code we used to get there. As you can see, we explicitly told the compiler to use Train on the left side of the equals sign. This is needed to apply the correct transformation. This is a very powerful feature of Rust, as it allows us to be very explicit about what we want to do.
 
 
 ## Option and Result
@@ -331,31 +360,30 @@ Two of the most powerful types in Rust are Option and Result. Let's see how they
 
 10. Let's create a function that returns an Option
 ```rust
-fn get_post() -> Option<Post> {
-    let post = Post {
-        userId: 1,
-        id: 1,
-        title: "foo".into(),
-        body: "bar".into(),
+fn get_train() -> Option<Train> {
+    let train = Train {
+        name: "Lego".into(),
+        speed: 11.0,
+        type_: TrainType::S,
     };
-    Some(post)
+    Some(train)
 }
 ```
 
 Let's uncomment the json parsing for now:
 ```rust
-    // let mut file = File::open("post.json").unwrap();
+    // let mut file = File::open("train.json").unwrap();
     // let mut contents = String::new();
     // file.read_to_string(&mut contents).unwrap();
 
-    // let post: Post = serde_json::from_str(&contents).unwrap();
+    // let train: Train = serde_json::from_str(&contents).unwrap();
 
-    // println!("Post: {:?}", post);
+    // println!("Train: {:?}", train);
 ```
 
 Now we can use the Option in the main function
 ```rust
-let post = get_post().unwrap();
+let train = get_train().unwrap();
 ```
 
 **Does it compile?**
@@ -365,7 +393,7 @@ But what happens if the Option is None?
 Let's change it!
 
 ```rust
-fn get_post() -> Option<Post> {
+fn get_train() -> Option<Train> {
     None
 }
 ```
@@ -378,9 +406,9 @@ This is where .unwrap() comes into play. It is a method that is available on the
 
 11. Let's change the code to handle the None case
 ```rust
-match get_post() {
-    Some(post) => println!("Post found: {:?}", post),
-    None => println!("No post found"),
+match get_train() {
+    Some(train) => println!("Train found: {:?}", train),
+    None => println!("No train found"),
 };
 ```
 
@@ -390,8 +418,8 @@ Great! Now we have a way to handle the None case. But what if we want to return 
 
 12. Let's change the function so that it returns a Result
 ```rust
-fn get_post() -> Result<Post, String> {
-    Err("Strike! Post office not operational!".into())
+fn get_train() -> Result<Train, String> {
+    Err("Strike! Today we announce Schienenersatzverkehr!".into())
 }
 ```
 
@@ -400,9 +428,9 @@ fn get_post() -> Result<Post, String> {
 As you can see, the compiler is not happy with this code. Why? We did not adjust for the change from Option to Result. Let's do that!
 
 ```rust
-match get_post() {
-    Ok(post) => println!("Post found: {:?}", post),
-    Err(message) => println!("No post found: {}", message),
+match get_train() {
+    Ok(train) => println!("Train found: {:?}", train),
+    Err(message) => println!("Error: {}", message),
 };
 ```
 
@@ -416,9 +444,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_get_post() {
-        let post = get_post().unwrap();
-        assert_eq!(post.userId, 1);
+    fn test_get_train() {
+        let train = get_train().unwrap();
+        assert_eq!(train.name, "ICE 1 - Thomas die Lokomotive");
     }
 }
 ```
@@ -434,16 +462,17 @@ Observe the structure. We have several elements:
 cargo test
 ```
 
-Observe the output. The test fails. Let's adjust the function to make it pass.
+Observe the output. The test fails. Let's adjust the function to make it pass. To do this, let's move
+the logic to parse the json to the get_train function.
 
 ```rust
-fn get_post() -> Result<Post, String> {
-    Ok(Post {
-        userId: 1,
-        id: 1,
-        title: "foo".into(),
-        body: "bar".into(),
-    })
+fn get_train() -> Result<Train, String> {
+    let mut file = File::open("train.json").unwrap();
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).unwrap();
+
+    let train: Train = serde_json::from_str(&contents).unwrap();
+    Ok(train)
 }
 ```
 
@@ -458,11 +487,11 @@ Run the test again, as you can see it passes now.
 ```
 
 ```rust
-/// Here we get a post
+/// Here we get a train
 /// # Returns
-/// A post
+/// A Train
 /// # Errors
-/// If the post office is not operational
+/// If the train company is on strike
 ```
 
 16. Now we can create the documentation
@@ -518,22 +547,59 @@ Create a router and start a server
     axum::serve(listener, app).await.unwrap();
 ```
 
-When opening http://localhost:3000 in your browser, you should see the message "Hello, World!". Congratulations, you just created a webserver with Rust!
+Let's see if it works!
 
-Let's now return a JSON of our Post instead. First we create a new handler for this purpose:
+```shell
+cargo run
+```
+
+```shell
+curl http://localhost:3000
+```
+
+You should see the message "Hello, World!". Congratulations, you just created a webserver with Rust!
+
+Let's now return a JSON of our Train instead. First we create a new handler for this purpose:
 
 ```rust
-    async fn post_handler() -> Json<Post> {
-        let post = get_post().unwrap();
-        Json(post)
+    async fn train_handler() -> Json<Train> {
+        let train = get_train().unwrap();
+        Json(train)
     }
 ```
 
 Then we return it as json:
 
 ```rust
-    let app = Router::new().route("/", get(post_handler));
+    let app = Router::new().route("/", get(train_handler));
 ```
+
+** Does it compile? **
+
+No it does not! And the message is quite cryptic. What is the problem?
+Our train_handler function returns a Json type, but to convert our Train and TrainType structs to JSON, we need to derive Serialize from the serde package. Let's do that!
+
+```rust
+use serde::Serialize;
+
+#[derive(Deserialize, Serialize, Debug)]
+enum TrainType {
+    ICE,
+    IC,
+    Regional(String),
+    S,
+}
+````
+
+```rust
+#[derive(Deserialize, Serialize, Debug)]
+struct Train {
+    name: String,
+    speed: f64,
+    type_: TrainType,
+}
+```
+
 
 ## Throw it into a Docker container
 
@@ -563,4 +629,11 @@ docker build -t trains .
 docker run -p 3000:3000 trains
 ```
 
-Now you can open http://localhost:3000 in your browser and see JSON Output!
+Let's check if it works!
+
+```shell
+curl http://localhost:3000
+```
+
+Yay! You just created a Rust webserver and put it into a Docker container!
+That's all folks! I hope you enjoyed the presentation!
