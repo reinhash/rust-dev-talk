@@ -501,6 +501,8 @@ cargo doc --open
 
 As you can see Rust is awesome, we can create documentation for our whole codebase with a single command.
 
+# Bonus Section
+
 ## Webserver
 
 But wait, there is more. Let's create a webserver!
